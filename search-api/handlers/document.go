@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/olivere/elastic/v6"
+	"github.com/olivere/elastic"
 	"github.com/teris-io/shortid"
 )
 
@@ -67,13 +67,20 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 		}
 		bulk.Add(elastic.NewBulkIndexRequest().Id(doc.ID).Doc(doc))
 	}
-	if _, err := bulk.Do(c.Request.Context()); err != nil {
-		log.Println(err)
-		errorResponse(c, http.StatusInternalServerError, "Failed to create documents")
+	_, err := bulk.Do(c.Request.Context())
+	if err != nil {
+		log.Printf("err is %+v\n", err)
 		return
 	}
+	// if _, err := bulk.Do(c.Request.Context()); err != nil {
+	// 	log.Printf("err is %+v\n", err)
+	// 	errorResponse(c, http.StatusInternalServerError, "Failed to create documents")
+	// 	return
+	// }
 
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Document Created",
+	})
 }
 
 func SearchEndpoint(c *gin.Context) {
