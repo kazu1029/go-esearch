@@ -1,13 +1,14 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kazu1029/gin-elastic/search-api/handlers"
 	"github.com/olivere/elastic"
 	"github.com/teris-io/shortid"
-	"log"
-	"net/http"
-	"time"
 )
 
 const (

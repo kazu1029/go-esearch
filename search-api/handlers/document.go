@@ -67,16 +67,11 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 		}
 		bulk.Add(elastic.NewBulkIndexRequest().Id(doc.ID).Doc(doc))
 	}
-	_, err := bulk.Do(c.Request.Context())
-	if err != nil {
+	if _, err := bulk.Do(c.Request.Context()); err != nil {
 		log.Printf("err is %+v\n", err)
+		errorResponse(c, http.StatusInternalServerError, "Failed to create documents")
 		return
 	}
-	// if _, err := bulk.Do(c.Request.Context()); err != nil {
-	// 	log.Printf("err is %+v\n", err)
-	// 	errorResponse(c, http.StatusInternalServerError, "Failed to create documents")
-	// 	return
-	// }
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Document Created",
