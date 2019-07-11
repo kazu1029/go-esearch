@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/olivere/elastic"
+	"github.com/teris-io/shortid"
 )
 
 const (
@@ -55,25 +56,25 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 		return
 	}
 
-	// bulk := elasticClient.
-	// 	Bulk().
-	// 	Index(elasticIndexName).
-	// 	Type(elasticTypeName)
+	bulk := elasticClient.
+		Bulk().
+		Index(elasticIndexName).
+		Type(elasticTypeName)
 
-	// for _, d := range docs {
-	// 	doc := Document{
-	// 		ID:        shortid.MustGenerate(),
-	// 		Title:     d.Title,
-	// 		CreatedAt: time.Now().UTC(),
-	// 		Content:   d.Content,
-	// 	}
-	// 	bulk.Add(elastic.NewBulkIndexRequest().Id(doc.ID).Doc(doc))
-	// }
-	// if _, err := bulk.Do(c.Request.Context()); err != nil {
-	// 	log.Printf("err is %+v\n", err)
-	// 	errorResponse(c, http.StatusInternalServerError, "Failed to create documents")
-	// 	return
-	// }
+	for _, d := range docs {
+		doc := Document{
+			ID:        shortid.MustGenerate(),
+			Title:     d.Title,
+			CreatedAt: time.Now().UTC(),
+			Content:   d.Content,
+		}
+		bulk.Add(elastic.NewBulkIndexRequest().Id(doc.ID).Doc(doc))
+	}
+	if _, err := bulk.Do(c.Request.Context()); err != nil {
+		log.Printf("err is %+v\n", err)
+		errorResponse(c, http.StatusInternalServerError, "Failed to create documents")
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Document Created",
@@ -81,6 +82,7 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 }
 
 func SearchEndpoint(c *gin.Context) {
+	elasticClient, err := InitElastic()
 	query := c.Query("query")
 	if query == "" {
 		errorResponse(c, http.StatusBadRequest, "Query not specified")

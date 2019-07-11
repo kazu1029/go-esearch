@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"reflect"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,18 +37,9 @@ type SearchResponse struct {
 	Documents []DocumentResponse `json:"documents"`
 }
 
-var elasticClient *elastic.Client
-
 func main() {
-	var err error
 	for {
-		// elasticClient, err = elastic.NewClient(
-		// 	elastic.SetURL("http://elasticsearch:9200"),
-		// 	elastic.SetSniff(false),
-		// )
-		elasticClient, err = handlers.InitElastic()
-		fmt.Printf("elasticClient is %+v\n", elasticClient)
-		fmt.Printf("elasticClient type is %+v\n", reflect.TypeOf(elasticClient))
+		_, err := handlers.InitElastic()
 		if err != nil {
 			log.Println(err)
 			time.Sleep(3 * time.Second)
@@ -62,7 +51,7 @@ func main() {
 	r := gin.Default()
 	r.POST("/documents", func(c *gin.Context) { handlers.CreateDocumentsEndpoint(c) })
 	r.GET("/search", func(c *gin.Context) { handlers.SearchEndpoint(c) })
-	if err = r.Run(":8080"); err != nil {
+	if err := r.Run(":8080"); err != nil {
 		log.Fatal(err)
 	}
 }
