@@ -48,10 +48,9 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Printf("elasticClient is %+v\n", elasticClient)
-	fmt.Printf("elasticClient type is %+v\n", reflect.TypeOf(elasticClient))
 	var docs []DocumentRequest
 	if err := c.BindJSON(&docs); err != nil {
+		fmt.Printf("err is %+v\n", err)
 		errorResponse(c, http.StatusBadRequest, "Malformed request body")
 		return
 	}
