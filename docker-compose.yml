@@ -13,3 +13,9 @@ services:
     build: ./docker/elasticsearch
     ports:
       - 9200:9200
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+volumes:
+  es-data:
+    driver: local
