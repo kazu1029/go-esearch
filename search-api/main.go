@@ -22,6 +22,7 @@ func main() {
 	r := gin.Default()
 	r.POST("/documents", func(c *gin.Context) { handlers.CreateDocumentsEndpoint(c) })
 	r.GET("/search", func(c *gin.Context) { handlers.SearchEndpoint(c) })
+	r.GET("/index", func(c *gin.Context) { handlers.CreateMapping(c) })
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal(err)
 	}

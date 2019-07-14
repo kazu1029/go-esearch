@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"reflect"
 	"strconv"
 	"time"
 
@@ -23,6 +23,7 @@ type Document struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	Content   string    `json:"content"`
 }
 
@@ -34,6 +35,7 @@ type DocumentRequest struct {
 type DocumentResponse struct {
 	Title     string    `json:"title"`
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	Content   string    `json:"content"`
 }
 
@@ -42,6 +44,35 @@ type SearchResponse struct {
 	Hits      string             `json:"hits"`
 	Documents []DocumentResponse `json:"documents"`
 }
+
+const mapping = `
+{
+  "settings": {
+	  "number_of_shards": 1,
+		"number_of_replicas": 0
+	},
+	"mappings": {
+	  "document": {
+			"properties": {
+			  "content": {
+				  "type": "string",
+					"analyzer": "japanese"
+				},
+				"title": {
+				  "type": "string",
+					"analyzer": "japanese"
+				},
+				"created_at": {
+				  "type": "date",
+				},
+				"updated_at": {
+				  "type": "date"
+				}
+			}
+		}
+	}
+}
+`
 
 func CreateDocumentsEndpoint(c *gin.Context) {
 	elasticClient, err := InitElastic()
@@ -65,6 +96,7 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 			ID:        shortid.MustGenerate(),
 			Title:     d.Title,
 			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
 			Content:   d.Content,
 		}
 		bulk.Add(elastic.NewBulkIndexRequest().Id(doc.ID).Doc(doc))
@@ -80,9 +112,37 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 	})
 }
 
+func CreateMapping(c *gin.Context) {
+	elasticClient, err := InitElastic()
+	ctx := context.Background()
+	if err != nil {
+		log.Println(err)
+	}
+	exists, err := elasticClient.IndexExists(elasticIndexName).Do(ctx)
+	fmt.Printf("exists is %+v\n", exists)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if !exists {
+		createIndex, err := elasticClient.CreateIndex(elasticIndexName).BodyString(mapping).Do(ctx)
+		if err != nil {
+			log.Println(err)
+		}
+		if !createIndex.Acknowledged {
+			log.Println(createIndex)
+		} else {
+			log.Println("successfully index created")
+		}
+	} else {
+		log.Println("Index already exists")
+	}
+}
+
 func SearchEndpoint(c *gin.Context) {
 	elasticClient, err := InitElastic()
-	query := c.Query("query")
+	queries := c.Request.URL.Query()
+	query := queries["query"][0]
 	if query == "" {
 		errorResponse(c, http.StatusBadRequest, "Query not specified")
 		return
@@ -90,6 +150,7 @@ func SearchEndpoint(c *gin.Context) {
 
 	skip := 0
 	take := 10
+	fmt.Printf("skip is %+v\n", queries["skip"])
 	if i, err := strconv.Atoi(c.Query("skip")); err == nil {
 		skip = i
 	}

@@ -1,6 +1,6 @@
 [
   {"index": {"_id": 1}},
-  {"title": "メモ1"," content": 水が好き"},
+  {"title": "メモ1"," content": "水が好き"},
   {"index": {"_id": 2}},
   {"title" : "メモ2", "content": "こんにちは"},
   {"index": {"_id": 3}},
