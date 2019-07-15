@@ -7,4 +7,4 @@ ENV transport.host="127.0.0.1"
 ENV xpack.security.enabled=false
 
 RUN bin/elasticsearch-plugin install analysis-kuromoji
-RUN elasticsearch-plugin install analysis-icu
+RUN bin/elasticsearch-plugin install analysis-icu

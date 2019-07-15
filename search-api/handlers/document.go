@@ -45,28 +45,49 @@ type SearchResponse struct {
 	Documents []DocumentResponse `json:"documents"`
 }
 
+// FIXME: Need to change mapping
 const mapping = `
 {
-  "settings": {
-	  "number_of_shards": 1,
-		"number_of_replicas": 0
+	"settings": {
+	  "index": {
+		  "number_of_shards": "1",
+			"number_of_replicas": "0"
+		},
+	  "analysis": {
+		  "tokenizer": {
+				"kuromoji": {
+				  "type": "kuromoji_tokenizer",
+					"mode": "search"
+				}
+			},
+			"analyzer": {
+			  "my_kuromoji_analyzer": {
+					"type": "custom",
+					"tokenizer": "kuromoji",
+					"filter": [
+					  "kuromoji_baseform",
+						"kuromoji_part_of_speech"
+					]
+				}
+			}
+		}
 	},
 	"mappings": {
-	  "document": {
-			"properties": {
-			  "content": {
-				  "type": "string",
-					"analyzer": "japanese"
+		"document":{
+			"properties":{
+				"content": {
+					"type": "keyword",
+					"analyzer": "my_kuromoji_analyzer"
 				},
 				"title": {
-				  "type": "string",
-					"analyzer": "japanese"
+					"type": "keyword",
+					"analyzer": "my_kuromoji_analyzer"
 				},
 				"created_at": {
-				  "type": "date",
+					"type": "date"
 				},
-				"updated_at": {
-				  "type": "date"
+				"updated_at":{
+					"type": "date"
 				}
 			}
 		}
@@ -119,12 +140,14 @@ func CreateMapping(c *gin.Context) {
 		log.Println(err)
 	}
 	exists, err := elasticClient.IndexExists(elasticIndexName).Do(ctx)
-	fmt.Printf("exists is %+v\n", exists)
 	if err != nil {
 		log.Println(err)
 	}
 
 	if !exists {
+		fmt.Printf("elasticClient is %+v\n", elasticClient)
+		fmt.Printf("index name is %+v\n", elasticIndexName)
+		fmt.Printf("mapping is %+v\n", mapping)
 		createIndex, err := elasticClient.CreateIndex(elasticIndexName).BodyString(mapping).Do(ctx)
 		if err != nil {
 			log.Println(err)
@@ -132,7 +155,7 @@ func CreateMapping(c *gin.Context) {
 		if !createIndex.Acknowledged {
 			log.Println(createIndex)
 		} else {
-			log.Println("successfully index created")
+			log.Println("successfully created index")
 		}
 	} else {
 		log.Println("Index already exists")

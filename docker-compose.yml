@@ -3,11 +3,13 @@ services:
   search_api:
     container_name: 'search_api'
     build: ./search-api
-    restart: 'on-failure'
+    restart: 'always'
     ports:
       - 8080:8080
     depends_on:
       - elasticsearch
+    volumes:
+      - ./search-api/:/go/src/app
   elasticsearch:
     container_name: 'elasticsearch'
     build: ./docker/elasticsearch
