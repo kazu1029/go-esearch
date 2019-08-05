@@ -49,24 +49,15 @@ type SearchResponse struct {
 const mapping = `
 {
 	"settings": {
-	  "index": {
-		  "number_of_shards": "1",
-			"number_of_replicas": "0"
-		},
 	  "analysis": {
-		  "tokenizer": {
-				"kuromoji": {
-				  "type": "kuromoji_tokenizer",
-					"mode": "search"
-				}
-			},
 			"analyzer": {
-			  "my_kuromoji_analyzer": {
+			  "ja_kuromoji_analyzer": {
 					"type": "custom",
-					"tokenizer": "kuromoji",
+					"tokenizer": "kuromoji_tokenizer",
 					"filter": [
 					  "kuromoji_baseform",
-						"kuromoji_part_of_speech"
+						"kuromoji_part_of_speech",
+						"kuromoji_readingform"
 					]
 				}
 			}
@@ -76,18 +67,12 @@ const mapping = `
 		"document":{
 			"properties":{
 				"content": {
-					"type": "keyword",
-					"analyzer": "my_kuromoji_analyzer"
+					"type": "text",
+					"analyzer": "ja_kuromoji_analyzer"
 				},
 				"title": {
-					"type": "keyword",
-					"analyzer": "my_kuromoji_analyzer"
-				},
-				"created_at": {
-					"type": "date"
-				},
-				"updated_at":{
-					"type": "date"
+					"type": "text",
+					"analyzer": "ja_kuromoji_analyzer"
 				}
 			}
 		}
@@ -101,6 +86,7 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 		log.Println(err)
 	}
 	var docs []DocumentRequest
+	// TODO: unable to bind japanese
 	if err := c.BindJSON(&docs); err != nil {
 		fmt.Printf("err is %+v\n", err)
 		errorResponse(c, http.StatusBadRequest, "Malformed request body")
@@ -145,9 +131,6 @@ func CreateMapping(c *gin.Context) {
 	}
 
 	if !exists {
-		fmt.Printf("elasticClient is %+v\n", elasticClient)
-		fmt.Printf("index name is %+v\n", elasticIndexName)
-		fmt.Printf("mapping is %+v\n", mapping)
 		createIndex, err := elasticClient.CreateIndex(elasticIndexName).BodyString(mapping).Do(ctx)
 		if err != nil {
 			log.Println(err)
