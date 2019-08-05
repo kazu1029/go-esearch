@@ -17,7 +17,18 @@ services:
       - 9200:9200
     volumes:
       - es-data:/usr/share/elasticsearch/data
+    networks:
+      - esnet
+  kibana:
+    build: ./docker/kibana
+    container_name: 'kibana'
+    ports:
+      - 5601:5601
+    networks:
+      - esnet
 
 volumes:
   es-data:
     driver: local
+networks:
+  esnet:
