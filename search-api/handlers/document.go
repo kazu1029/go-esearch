@@ -45,6 +45,11 @@ type SearchResponse struct {
 	Documents []DocumentResponse `json:"documents"`
 }
 
+type IndexTemplate struct {
+	Name     string `json:"name"`
+	Template string `json:"template"`
+}
+
 // TODO: Need to enable to accept templates
 const mapping = `
 {
@@ -155,11 +160,10 @@ func SearchEndpoint(c *gin.Context) {
 
 	skip := 0
 	take := 10
-	log.Printf("skip is %+v\n", queries["skip"])
-	if i, err := strconv.Atoi(c.Query("skip")); err == nil {
+	if i, err := strconv.Atoi(c.Query("skip")); err != nil {
 		skip = i
 	}
-	if i, err := strconv.Atoi(c.Query("take")); err == nil {
+	if i, err := strconv.Atoi(c.Query("take")); err != nil {
 		take = i
 	}
 
@@ -189,4 +193,35 @@ func SearchEndpoint(c *gin.Context) {
 	res.Documents = docs
 
 	c.JSON(http.StatusOK, res)
+}
+
+func CreateIndexTemplate(c *gin.Context) {
+	elasticClient, err := InitElastic()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	templateName := c.Param("template_name")
+	var template IndexTemplate
+	if err := c.BindJSON(&template); err != nil {
+		log.Printf("err is %+v\n", err)
+		log.Printf("template is %+v\n", template)
+		errorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	log.Printf("template is %+v\n", template)
+
+	temp := elasticClient.
+		IndexPutTemplate(templateName).
+		BodyJson(template.Template)
+
+	if _, err := temp.Do(c.Request.Context()); err != nil {
+		log.Printf("err is %+v\n", err)
+		errorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Index Template Created",
+	})
 }
