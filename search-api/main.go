@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,12 @@ func main() {
 	r.POST("/documents", func(c *gin.Context) { handlers.CreateDocumentsEndpoint(c) })
 	r.GET("/search", func(c *gin.Context) { handlers.SearchEndpoint(c) })
 	r.GET("/index", func(c *gin.Context) { handlers.CreateMapping(c) })
-	if err := r.Run(":8080"); err != nil {
-		log.Fatal(err)
+	s := &http.Server{
+		Addr:           ":8080",
+		Handler:        r,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 & time.Second,
+		MaxHeaderBytes: 1 << 20,
 	}
+	s.ListenAndServe()
 }

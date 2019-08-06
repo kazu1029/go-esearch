@@ -22,9 +22,9 @@ const (
 type Document struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
+	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	Content   string    `json:"content"`
 }
 
 type DocumentRequest struct {
@@ -34,9 +34,9 @@ type DocumentRequest struct {
 
 type DocumentResponse struct {
 	Title     string    `json:"title"`
+	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	Content   string    `json:"content"`
 }
 
 type SearchResponse struct {
@@ -45,7 +45,7 @@ type SearchResponse struct {
 	Documents []DocumentResponse `json:"documents"`
 }
 
-// FIXME: Need to change mapping
+// TODO: Need to enable to accept templates
 const mapping = `
 {
 	"settings": {
@@ -86,9 +86,8 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 		log.Println(err)
 	}
 	var docs []DocumentRequest
-	// TODO: unable to bind japanese
 	if err := c.BindJSON(&docs); err != nil {
-		fmt.Printf("err is %+v\n", err)
+		log.Printf("err is %+v\n", err)
 		errorResponse(c, http.StatusBadRequest, "Malformed request body")
 		return
 	}
@@ -156,7 +155,7 @@ func SearchEndpoint(c *gin.Context) {
 
 	skip := 0
 	take := 10
-	fmt.Printf("skip is %+v\n", queries["skip"])
+	log.Printf("skip is %+v\n", queries["skip"])
 	if i, err := strconv.Atoi(c.Query("skip")); err == nil {
 		skip = i
 	}
