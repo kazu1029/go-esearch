@@ -45,39 +45,6 @@ type SearchResponse struct {
 	Documents []DocumentResponse `json:"documents"`
 }
 
-type IndexTemplate struct {
-	IndexPartterns string `json:"index_partters"`
-	Settings       struct {
-		NumberOfShards int `json:"number_of_shards"`
-	}
-	Mappings struct {
-		AccesslogType struct {
-			Properties struct {
-				Host struct {
-					Type struct {
-						Keyword string `json:"keyword"`
-					}
-				}
-				Uri struct {
-					Type struct {
-						Keyword string `json:"keyword"`
-					}
-				}
-				Method struct {
-					Type struct {
-						Keyword string `json:"keyword"`
-					}
-				}
-				AccessTime struct {
-					Type struct {
-						Date time.Time `json:"date"`
-					}
-				}
-			}
-		}
-	}
-}
-
 // TODO: Need to enable to accept templates
 const mapping = `
 {
@@ -112,6 +79,29 @@ const mapping = `
 	}
 }
 `
+
+// index template sample is following json
+// const indexTemplate = `
+// {
+//   "index_patterns": ["accesslog-*"],
+// 	"settings": {
+// 	  "number_of_shards": 1
+// 	},
+// 	"mappings": {
+// 		"accesslog_type": {
+// 			"_source": {
+// 				"enabled": true
+// 			},
+// 			"properties": {
+// 				"host": { "type": "keyword" },
+// 				"uri": { "type": "keyword" },
+// 				"method": { "type": "keyword" },
+// 				"accesstime": { "type": "date" }
+// 			}
+//     }
+// 	}
+// }
+// `
 
 func CreateDocumentsEndpoint(c *gin.Context) {
 	elasticClient, err := InitElastic()
@@ -225,26 +215,23 @@ func SearchEndpoint(c *gin.Context) {
 
 func CreateIndexTemplate(c *gin.Context) {
 	elasticClient, err := InitElastic()
+	ctx := context.Background()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	templateName := c.Param("template_name")
-	var template IndexTemplate
+	var template interface{}
 	if err := c.BindJSON(&template); err != nil {
-		log.Printf("err is %+v\n", err)
-		log.Printf("template is %+v\n", template)
 		errorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	log.Printf("template is %+v\n", template)
 
 	temp := elasticClient.
 		IndexPutTemplate(templateName).
-		BodyJson(template.Template)
+		BodyJson(template)
 
-	if _, err := temp.Do(c.Request.Context()); err != nil {
-		log.Printf("err is %+v\n", err)
+	if _, err := temp.Do(ctx); err != nil {
 		errorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
