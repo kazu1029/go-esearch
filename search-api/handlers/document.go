@@ -46,8 +46,36 @@ type SearchResponse struct {
 }
 
 type IndexTemplate struct {
-	Name     string `json:"name"`
-	Template string `json:"template"`
+	IndexPartterns string `json:"index_partters"`
+	Settings       struct {
+		NumberOfShards int `json:"number_of_shards"`
+	}
+	Mappings struct {
+		AccesslogType struct {
+			Properties struct {
+				Host struct {
+					Type struct {
+						Keyword string `json:"keyword"`
+					}
+				}
+				Uri struct {
+					Type struct {
+						Keyword string `json:"keyword"`
+					}
+				}
+				Method struct {
+					Type struct {
+						Keyword string `json:"keyword"`
+					}
+				}
+				AccessTime struct {
+					Type struct {
+						Date time.Time `json:"date"`
+					}
+				}
+			}
+		}
+	}
 }
 
 // TODO: Need to enable to accept templates
