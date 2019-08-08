@@ -22,9 +22,9 @@ func main() {
 
 	r := gin.Default()
 	r.POST("/documents", func(c *gin.Context) { handlers.CreateDocumentsEndpoint(c) })
-	r.POST("/index/template/:template_name", func(c *gin.Context) { handlers.CreateIndexTemplate(c) })
+	r.POST("/index/:index_name/template/:template_name", func(c *gin.Context) { handlers.CreateIndexTemplate(c) })
+	r.POST("/index/:index_name/mapping", func(c *gin.Context) { handlers.CreateMapping(c) })
 	r.GET("/search", func(c *gin.Context) { handlers.SearchEndpoint(c) })
-	r.GET("/index", func(c *gin.Context) { handlers.CreateMapping(c) })
 	s := &http.Server{
 		Addr:           ":8080",
 		Handler:        r,

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kazu1029/gin-elastic/search-api/pkg/esearch"
 	"github.com/olivere/elastic"
 	"github.com/teris-io/shortid"
 )
@@ -45,40 +46,40 @@ type SearchResponse struct {
 	Documents []DocumentResponse `json:"documents"`
 }
 
-// TODO: Need to enable to accept templates
-const mapping = `
-{
-	"settings": {
-	  "analysis": {
-			"analyzer": {
-			  "ja_kuromoji_analyzer": {
-					"type": "custom",
-					"tokenizer": "kuromoji_tokenizer",
-					"filter": [
-					  "kuromoji_baseform",
-						"kuromoji_part_of_speech",
-						"kuromoji_readingform"
-					]
-				}
-			}
-		}
-	},
-	"mappings": {
-		"document":{
-			"properties":{
-				"content": {
-					"type": "text",
-					"analyzer": "ja_kuromoji_analyzer"
-				},
-				"title": {
-					"type": "text",
-					"analyzer": "ja_kuromoji_analyzer"
-				}
-			}
-		}
-	}
-}
-`
+// index mapping sample
+// const mappingSample = `
+// {
+// 	"settings": {
+// 	  "analysis": {
+// 			"analyzer": {
+// 			  "ja_kuromoji_analyzer": {
+// 					"type": "custom",
+// 					"tokenizer": "kuromoji_tokenizer",
+// 					"filter": [
+// 					  "kuromoji_baseform",
+// 						"kuromoji_part_of_speech",
+// 						"kuromoji_readingform"
+// 					]
+// 				}
+// 			}
+// 		}
+// 	},
+// 	"mappings": {
+// 		"document":{
+// 			"properties":{
+// 				"content": {
+// 					"type": "text",
+// 					"analyzer": "ja_kuromoji_analyzer"
+// 				},
+// 				"title": {
+// 					"type": "text",
+// 					"analyzer": "ja_kuromoji_analyzer"
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+// `
 
 // index template sample is following json
 // const indexTemplate = `
@@ -102,6 +103,10 @@ const mapping = `
 // 	}
 // }
 // `
+
+func ElasticIndex(client *elastic.Client) *esearch.IndexService {
+	return esearch.NewIndexService(client)
+}
 
 func CreateDocumentsEndpoint(c *gin.Context) {
 	elasticClient, err := InitElastic()
@@ -147,24 +152,22 @@ func CreateMapping(c *gin.Context) {
 	if err != nil {
 		log.Println(err)
 	}
-	exists, err := elasticClient.IndexExists(elasticIndexName).Do(ctx)
-	if err != nil {
-		log.Println(err)
+
+	indexName := c.Param("index_name")
+	var mapping interface{}
+	if err := c.BindJSON(&mapping); err != nil {
+		errorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	if !exists {
-		createIndex, err := elasticClient.CreateIndex(elasticIndexName).BodyString(mapping).Do(ctx)
-		if err != nil {
-			log.Println(err)
-		}
-		if !createIndex.Acknowledged {
-			log.Println(createIndex)
-		} else {
-			log.Println("successfully created index")
-		}
-	} else {
-		log.Println("Index already exists")
+	index := ElasticIndex(elasticClient)
+	res, err := index.CreateMapping(ctx, indexName, mapping)
+	if err != nil {
+		log.Printf("err is %+v\n", err)
 	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": res,
+	})
 }
 
 func SearchEndpoint(c *gin.Context) {
