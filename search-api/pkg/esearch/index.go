@@ -34,3 +34,14 @@ func (s *IndexService) CreateMapping(ctx context.Context, indexName string, mapp
 	}
 	return "Mapping Created", nil
 }
+
+func (s *IndexService) CreateIndexTemplate(ctx context.Context, templateName string, template interface{}) (string, error) {
+	temp := s.Client.
+		IndexPutTemplate(templateName).
+		BodyJson(template)
+
+	if _, err := temp.Do(ctx); err != nil {
+		return "", err
+	}
+	return "Template Created", nil
+}

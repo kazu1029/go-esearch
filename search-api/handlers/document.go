@@ -164,8 +164,9 @@ func CreateMapping(c *gin.Context) {
 	res, err := index.CreateMapping(ctx, indexName, mapping)
 	if err != nil {
 		log.Printf("err is %+v\n", err)
+		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": res,
 	})
 }
@@ -230,16 +231,13 @@ func CreateIndexTemplate(c *gin.Context) {
 		return
 	}
 
-	temp := elasticClient.
-		IndexPutTemplate(templateName).
-		BodyJson(template)
-
-	if _, err := temp.Do(ctx); err != nil {
-		errorResponse(c, http.StatusInternalServerError, err.Error())
-		return
+	index := ElasticIndex(elasticClient)
+	res, err := index.CreateIndexTemplate(ctx, templateName, template)
+	if err != nil {
+		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Index Template Created",
+	c.JSON(http.StatusCreated, gin.H{
+		"message": res,
 	})
 }
