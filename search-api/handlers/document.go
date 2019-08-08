@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -32,8 +30,12 @@ type SearchResponse struct {
 	Documents []DocumentResponse `json:"documents"`
 }
 
-func ElasticIndex(client *elastic.Client) *esearch.IndexService {
+func NewElasticIndex(client *elastic.Client) *esearch.IndexService {
 	return esearch.NewIndexService(client)
+}
+
+func NewElasticSearch(client *elastic.Client) *esearch.SearchService {
+	return esearch.NewSearchService(client)
 }
 
 func CreateDocumentsEndpoint(c *gin.Context) {
@@ -51,7 +53,7 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 		return
 	}
 
-	index := ElasticIndex(elasticClient)
+	index := NewElasticIndex(elasticClient)
 	res, err := index.BulkInsert(ctx, docs, elasticIndexName, elasticTypeName)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
@@ -77,7 +79,7 @@ func CreateMapping(c *gin.Context) {
 		return
 	}
 
-	index := ElasticIndex(elasticClient)
+	index := NewElasticIndex(elasticClient)
 	res, err := index.CreateMapping(ctx, indexName, mapping)
 	if err != nil {
 		log.Printf("err is %+v\n", err)
@@ -90,6 +92,10 @@ func CreateMapping(c *gin.Context) {
 
 func SearchEndpoint(c *gin.Context) {
 	elasticClient, err := InitElastic()
+	if err != nil {
+		errorResponse(c, http.StatusBadRequest, err.Error())
+	}
+	ctx := context.Background()
 	queries := c.Request.URL.Query()
 	query := queries["query"][0]
 	if query == "" {
@@ -105,31 +111,13 @@ func SearchEndpoint(c *gin.Context) {
 	if i, err := strconv.Atoi(c.Query("take")); err != nil {
 		take = i
 	}
+	types := []string{"title", "content"}
 
-	esQuery := elastic.NewMultiMatchQuery(query, "title", "content").
-		Fuzziness("2").
-		MinimumShouldMatch("2")
-	result, err := elasticClient.Search().
-		Index(elasticIndexName).
-		Query(esQuery).
-		From(skip).Size(take).
-		Do(c.Request.Context())
+	search := NewElasticSearch(elasticClient)
+	res, err := search.SearchMultiMatchQuery(ctx, elasticIndexName, skip, take, query, types...)
 	if err != nil {
-		log.Printf("err is %v\n", err)
-		errorResponse(c, http.StatusInternalServerError, "Something went wrong")
-		return
+		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
-	res := SearchResponse{
-		Time: fmt.Sprintf("%d", result.TookInMillis),
-		Hits: fmt.Sprintf("%d", result.Hits.TotalHits),
-	}
-	docs := make([]DocumentResponse, 0)
-	for _, hit := range result.Hits.Hits {
-		var doc DocumentResponse
-		json.Unmarshal(*hit.Source, &doc)
-		docs = append(docs, doc)
-	}
-	res.Documents = docs
 
 	c.JSON(http.StatusOK, res)
 }
@@ -148,7 +136,7 @@ func CreateIndexTemplate(c *gin.Context) {
 		return
 	}
 
-	index := ElasticIndex(elasticClient)
+	index := NewElasticIndex(elasticClient)
 	res, err := index.CreateIndexTemplate(ctx, templateName, template)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
