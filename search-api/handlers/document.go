@@ -104,13 +104,14 @@ func SearchEndpoint(c *gin.Context) {
 	}
 
 	skip := 0
-	take := 10
-	if i, err := strconv.Atoi(c.Query("skip")); err != nil {
+	take := 50
+	if i, err := strconv.Atoi(c.Query("skip")); err == nil {
 		skip = i
 	}
-	if i, err := strconv.Atoi(c.Query("take")); err != nil {
+	if i, err := strconv.Atoi(c.Query("take")); err == nil {
 		take = i
 	}
+	// TODO: fix types later
 	types := []string{"title", "content"}
 
 	search := NewElasticSearch(elasticClient)
