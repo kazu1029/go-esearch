@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/olivere/elastic"
@@ -33,15 +32,13 @@ func NewSearchService(Client *elastic.Client) *SearchService {
 
 func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName string, skip int, take int, text interface{}, fields ...string) (SearchResponse, error) {
 	esQuery := elastic.NewMultiMatchQuery(text, fields...).
-		Fuzziness("2").
-		MinimumShouldMatch("2")
-	log.Printf("esQuery is %+v\n", esQuery)
+		Fuzziness("AUTO").
+		MinimumShouldMatch("1")
 	result, err := s.Client.Search().
 		Index(indexName).
 		Query(esQuery).
 		From(skip).Size(take).
 		Do(ctx)
-	log.Printf("result are %+\n", result)
 
 	res := SearchResponse{
 		Time: fmt.Sprintf("%d", result.TookInMillis),
@@ -56,9 +53,6 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 		json.Unmarshal(*hit.Source, &doc)
 		docs = append(docs, doc)
 	}
-	log.Printf("text is %+v\n", text)
-	log.Printf("docs are %+v\n", docs)
-	log.Printf("fields are %+v\n", fields)
 	res.Documents = docs
 	return res, nil
 }
