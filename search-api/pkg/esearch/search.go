@@ -21,9 +21,9 @@ type DocumentResponse struct {
 }
 
 type SearchResponse struct {
-	Time      string             `json:"time"`
-	Hits      string             `json:"hits"`
-	Documents []DocumentResponse `json:"documents"`
+	Time    string             `json:"time"`
+	Hits    string             `json:"hits"`
+	Results []DocumentResponse `json:"results"`
 }
 
 func NewSearchService(Client *elastic.Client) *SearchService {
@@ -53,6 +53,6 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 		json.Unmarshal(*hit.Source, &doc)
 		docs = append(docs, doc)
 	}
-	res.Documents = docs
+	res.Results = docs
 	return res, nil
 }

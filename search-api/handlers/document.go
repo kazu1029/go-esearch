@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -91,13 +92,18 @@ func CreateMapping(c *gin.Context) {
 }
 
 func SearchEndpoint(c *gin.Context) {
+	var query string
+	var targetTypes []string
 	elasticClient, err := InitElastic()
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
 	ctx := context.Background()
 	queries := c.Request.URL.Query()
-	query := queries["query"][0]
+	query = queries["query"][0]
+	// TODO: accept the other symbols
+	targetTypes = strings.Split(queries["target_types"][0], ",")
+	index_name := c.Param("index_name")
 	if query == "" {
 		errorResponse(c, http.StatusBadRequest, "Query not specified")
 		return
@@ -111,11 +117,9 @@ func SearchEndpoint(c *gin.Context) {
 	if i, err := strconv.Atoi(c.Query("take")); err == nil {
 		take = i
 	}
-	// TODO: fix types later
-	types := []string{"title", "content"}
 
 	search := NewElasticSearch(elasticClient)
-	res, err := search.SearchMultiMatchQuery(ctx, elasticIndexName, skip, take, query, types...)
+	res, err := search.SearchMultiMatchQuery(ctx, index_name, skip, take, query, targetTypes...)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
