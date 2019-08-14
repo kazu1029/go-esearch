@@ -103,7 +103,7 @@ func SearchEndpoint(c *gin.Context) {
 	query = queries["query"][0]
 	// TODO: accept the other symbols
 	targetTypes = strings.Split(queries["target_types"][0], ",")
-	index_name := c.Param("index_name")
+	indexName := c.Param("index_name")
 	if query == "" {
 		errorResponse(c, http.StatusBadRequest, "Query not specified")
 		return
@@ -119,7 +119,7 @@ func SearchEndpoint(c *gin.Context) {
 	}
 
 	search := NewElasticSearch(elasticClient)
-	res, err := search.SearchMultiMatchQuery(ctx, index_name, skip, take, query, targetTypes...)
+	res, err := search.SearchMultiMatchQuery(ctx, indexName, skip, take, query, targetTypes...)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}

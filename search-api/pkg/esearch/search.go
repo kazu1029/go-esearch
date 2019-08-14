@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/olivere/elastic"
 )
@@ -13,17 +12,10 @@ type SearchService struct {
 	Client *elastic.Client
 }
 
-type DocumentResponse struct {
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 type SearchResponse struct {
-	Time    string             `json:"time"`
-	Hits    string             `json:"hits"`
-	Results []DocumentResponse `json:"results"`
+	Time    string        `json:"time"`
+	Hits    string        `json:"hits"`
+	Results []interface{} `json:"results"`
 }
 
 func NewSearchService(Client *elastic.Client) *SearchService {
@@ -47,9 +39,10 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 	if err != nil {
 		return res, err
 	}
-	docs := make([]DocumentResponse, 0)
+
+	docs := make([]interface{}, 0)
 	for _, hit := range result.Hits.Hits {
-		var doc DocumentResponse
+		var doc interface{}
 		json.Unmarshal(*hit.Source, &doc)
 		docs = append(docs, doc)
 	}

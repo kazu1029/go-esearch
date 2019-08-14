@@ -10,9 +10,7 @@ import (
 )
 
 type IndexService struct {
-	Client    *elastic.Client
-	IndexName string
-	TypeName  string
+	Client *elastic.Client
 }
 
 type Document struct {
