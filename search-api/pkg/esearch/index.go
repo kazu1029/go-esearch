@@ -3,21 +3,12 @@ package esearch
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/olivere/elastic"
 )
 
 type IndexService struct {
 	Client *elastic.Client
-}
-
-type Document struct {
-	ID        string    `json:"id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func NewIndexService(Client *elastic.Client) *IndexService {

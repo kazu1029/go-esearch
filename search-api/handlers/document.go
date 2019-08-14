@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,11 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kazu1029/gin-elastic/search-api/pkg/esearch"
 	"github.com/olivere/elastic"
-)
-
-const (
-	elasticIndexName = "documents"
-	elasticTypeName  = "document"
 )
 
 type DocumentResponse struct {
@@ -42,7 +36,6 @@ func NewElasticSearch(client *elastic.Client) *esearch.SearchService {
 func CreateDocumentsEndpoint(c *gin.Context) {
 	elasticClient, err := InitElastic()
 	if err != nil {
-		log.Println(err)
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
 	indexName := c.Param("index_name")
@@ -51,17 +44,13 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 	// TODO: need to dynamic variables
 	var docs []interface{}
 	if err := c.BindJSON(&docs); err != nil {
-		log.Printf("err is %+v\n", err)
 		errorResponse(c, http.StatusBadRequest, "Malformed request body")
-		return
 	}
-	log.Printf("docs are %+v\n", docs)
 
 	index := NewElasticIndex(elasticClient)
 	res, err := index.BulkInsert(ctx, docs, indexName, typeName)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
-		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -73,20 +62,18 @@ func CreateMapping(c *gin.Context) {
 	elasticClient, err := InitElastic()
 	ctx := context.Background()
 	if err != nil {
-		log.Println(err)
+		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
 
 	indexName := c.Param("index_name")
 	var mapping interface{}
 	if err := c.BindJSON(&mapping); err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
-		return
 	}
 
 	index := NewElasticIndex(elasticClient)
 	res, err := index.CreateMapping(ctx, indexName, mapping)
 	if err != nil {
-		log.Printf("err is %+v\n", err)
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -109,7 +96,6 @@ func SearchEndpoint(c *gin.Context) {
 	indexName := c.Param("index_name")
 	if query == "" {
 		errorResponse(c, http.StatusBadRequest, "Query not specified")
-		return
 	}
 
 	skip := 0
@@ -134,14 +120,13 @@ func CreateIndexTemplate(c *gin.Context) {
 	elasticClient, err := InitElastic()
 	ctx := context.Background()
 	if err != nil {
-		log.Fatal(err)
+		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
 
 	templateName := c.Param("template_name")
 	var template interface{}
 	if err := c.BindJSON(&template); err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
-		return
 	}
 
 	index := NewElasticIndex(elasticClient)
