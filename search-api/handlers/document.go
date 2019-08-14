@@ -45,17 +45,20 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 		log.Println(err)
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
+	indexName := c.Param("index_name")
+	typeName := c.Param("type_name")
 	ctx := context.Background()
 	// TODO: need to dynamic variables
-	var docs []esearch.DocumentRequest
+	var docs []interface{}
 	if err := c.BindJSON(&docs); err != nil {
 		log.Printf("err is %+v\n", err)
 		errorResponse(c, http.StatusBadRequest, "Malformed request body")
 		return
 	}
+	log.Printf("docs are %+v\n", docs)
 
 	index := NewElasticIndex(elasticClient)
-	res, err := index.BulkInsert(ctx, docs, elasticIndexName, elasticTypeName)
+	res, err := index.BulkInsert(ctx, docs, indexName, typeName)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 		return

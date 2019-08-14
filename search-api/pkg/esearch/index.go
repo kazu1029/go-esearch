@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/olivere/elastic"
-	"github.com/teris-io/shortid"
 )
 
 type IndexService struct {
@@ -19,11 +18,6 @@ type Document struct {
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type DocumentRequest struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
 }
 
 func NewIndexService(Client *elastic.Client) *IndexService {
@@ -61,21 +55,14 @@ func (s *IndexService) CreateIndexTemplate(ctx context.Context, templateName str
 	return "Template Created", nil
 }
 
-func (s *IndexService) BulkInsert(ctx context.Context, docs []DocumentRequest, indexName string, typeName string) (string, error) {
+func (s *IndexService) BulkInsert(ctx context.Context, docs []interface{}, indexName string, typeName string) (string, error) {
 	bulk := s.Client.
 		Bulk().
 		Index(indexName).
 		Type(typeName)
 
 	for _, d := range docs {
-		doc := Document{
-			ID:        shortid.MustGenerate(),
-			Title:     d.Title,
-			CreatedAt: time.Now().UTC(),
-			UpdatedAt: time.Now().UTC(),
-			Content:   d.Content,
-		}
-		bulk.Add(elastic.NewBulkIndexRequest().Id(doc.ID).Doc(doc))
+		bulk.Add(elastic.NewBulkIndexRequest().Doc(d))
 	}
 	if _, err := bulk.Do(ctx); err != nil {
 		return "", err
