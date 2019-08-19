@@ -3,7 +3,6 @@ package esearch
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/olivere/elastic"
