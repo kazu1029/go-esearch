@@ -3,6 +3,7 @@ package esearch
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/olivere/elastic"
@@ -23,6 +24,8 @@ func NewSearchService(Client *elastic.Client) *SearchService {
 }
 
 func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName string, skip int, take int, text interface{}, fields ...string) (SearchResponse, error) {
+	res := SearchResponse{}
+	// TODO: check fields are not empty
 	esQuery := elastic.NewMultiMatchQuery(text, fields...).
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
@@ -32,10 +35,8 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 		From(skip).Size(take).
 		Do(ctx)
 
-	res := SearchResponse{
-		Time: fmt.Sprintf("%d", result.TookInMillis),
-		Hits: fmt.Sprintf("%d", result.Hits.TotalHits),
-	}
+	res.Time = fmt.Sprintf("%d", result.TookInMillis)
+	res.Hits = fmt.Sprintf("%d", result.Hits.TotalHits)
 	if err != nil {
 		return res, err
 	}
