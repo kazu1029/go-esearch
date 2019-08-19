@@ -5,25 +5,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kazu1029/gin-elastic/search-api/pkg/esearch"
 	"github.com/olivere/elastic"
 )
-
-type DocumentResponse struct {
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type SearchResponse struct {
-	Time      string             `json:"time"`
-	Hits      string             `json:"hits"`
-	Documents []DocumentResponse `json:"documents"`
-}
 
 func NewElasticIndex(client *elastic.Client) *esearch.IndexService {
 	return esearch.NewIndexService(client)
