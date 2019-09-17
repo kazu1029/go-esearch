@@ -1,4 +1,4 @@
-module github.com/kazu1029/gin-elastic
+module github.com/kazu1029/go-elastic
 
 go 1.12
 

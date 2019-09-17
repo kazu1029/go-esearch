@@ -1,4 +1,4 @@
-# gin-elastic
+# go-elastic
 
 ## How to use
 

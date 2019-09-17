@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kazu1029/gin-elastic/search-api/handlers"
+	"github.com/kazu1029/go-elastic/search-api/handlers"
 )
 
 func main() {

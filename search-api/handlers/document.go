@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kazu1029/gin-elastic/esearch"
+	"github.com/kazu1029/go-elastic/esearch"
 	"github.com/olivere/elastic"
 )
 
