@@ -22,7 +22,7 @@ func NewSearchService(Client *elastic.Client) *SearchService {
 	return &SearchService{Client: Client}
 }
 
-func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName string, skip int, take int, text interface{}, fields ...string) (SearchResponse, error) {
+func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName string, skip int, take int, text interface{}, sortField string, ascending bool, fields ...string) (SearchResponse, error) {
 	res := SearchResponse{}
 	// TODO: check fields are not empty
 	esQuery := elastic.NewMultiMatchQuery(text, fields...).
@@ -31,6 +31,7 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 	result, err := s.Client.Search().
 		Index(indexName).
 		Query(esQuery).
+		Sort(sortField, ascending).
 		From(skip).Size(take).
 		Do(ctx)
 
@@ -40,11 +41,12 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 		return res, err
 	}
 
-	docs := make([]interface{}, 0)
-	for _, hit := range result.Hits.Hits {
+	hits, _ := strconv.Atoi(res.Hits)
+	docs := make([]interface{}, hits)
+	for i, hit := range result.Hits.Hits {
 		var doc interface{}
 		json.Unmarshal(*hit.Source, &doc)
-		docs = append(docs, doc)
+		docs[i] = doc
 	}
 	res.Results = docs
 	return res, nil
