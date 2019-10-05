@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strconv"
 
 	"github.com/olivere/elastic"
@@ -34,7 +33,6 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 		MinimumShouldMatch("1")
 	sortQuery := new(elastic.FieldSort)
 	fmt.Printf("sortQuery: %v\n", sortQuery)
-	fmt.Printf("elastic.FieldSort type: %v\n", reflect.TypeOf(elastic.FieldSort))
 	if s.ascending {
 		sortQuery = elastic.NewFieldSort(sortField).Asc()
 	} else {
