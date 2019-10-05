@@ -32,11 +32,11 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
 	sortQuery := elastic.FieldSort{}
-	fmt.Pritnf("sortQuery: %v\n", sortQuery)
+	fmt.Printf("sortQuery: %v\n", sortQuery)
 	if s.ascending {
-		sortQuery = elastic.NewFieldSort(sortField).Asc()
+		sortQuery = &elastic.NewFieldSort(sortField).Asc()
 	} else {
-		sortQuery = elastic.NewFieldSort(sortField).Desc()
+		sortQuery = &elastic.NewFieldSort(sortField).Desc()
 	}
 	result, err := s.Client.Search().
 		Index(indexName).
@@ -71,12 +71,12 @@ func (s *SearchService) SetAsc(ascending bool) *SearchService {
 	}
 }
 
-func (s *SearchService) Asc() (s *SearchService) {
+func (s *SearchService) Asc() *SearchService {
 	s.ascending = true
-	return
+	return s
 }
 
-func (s *SearchService) Desc() (s *SearchService) {
+func (s *SearchService) Desc() *SearchService {
 	s.ascending = false
-	return
+	return s
 }
