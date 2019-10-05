@@ -23,12 +23,11 @@ func NewSearchService(Client *elastic.Client) *SearchService {
 	return &SearchService{Client: Client}
 }
 
-func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName string, skip int, take int, text interface{}, sortField string, ascending bool, fields ...string) (SearchResponse, err error) {
-	res := SearchResponse{}
+func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName string, skip int, take int, text interface{}, sortField string, ascending bool, fields ...string) (res SearchResponse, err error) {
 	// TODO: check fields are not empty
 	fmt.Printf("ascending: %v\n", ascending)
 	fmt.Printf("sortField: %v\n", sortField)
-	result := elastic.SearchResult{}
+	result := new(elastic.SearchResult)
 	esQuery := elastic.NewMultiMatchQuery(text, fields...).
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
