@@ -29,12 +29,21 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 	esQuery := elastic.NewMultiMatchQuery(text, fields...).
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
-	result, err := s.Client.Search().
-		Index(indexName).
-		Query(esQuery).
-		Sort(sortField, ascending).
-		From(skip).Size(take).
-		Do(ctx)
+	if asceding == true {
+		result, err := s.Client.Search().
+			Index(indexName).
+			Query(esQuery).
+			SortBy(elastic.NewFieldSort(sortField).Asc(), elastic.NewScoreSort()).
+			From(skip).Size(take).
+			Do(ctx)
+	} else {
+		result, err := s.Client.Search().
+			Index(indexName).
+			Query(esQuery).
+			SortBy(elastic.NewFieldSort(sortField).Desc(), elastic.NewScoreSort()).
+			From(skip).Size(take).
+			Do(ctx)
+	}
 
 	res.Time = fmt.Sprintf("%d", result.TookInMillis)
 	res.Hits = fmt.Sprintf("%d", result.Hits.TotalHits)
