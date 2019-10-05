@@ -31,17 +31,11 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 	esQuery := elastic.NewMultiMatchQuery(text, fields...).
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
-	var sortQuery elastic.FieldSort
-	fmt.Printf("sortQuery: %v\n", sortQuery)
-	if s.ascending {
-		sortQuery = elastic.NewFieldSort(sortField).Asc()
-	} else {
-		sortQuery = elastic.NewFieldSort(sortField).Desc()
-	}
+
 	result, err := s.Client.Search().
 		Index(indexName).
 		Query(esQuery).
-		SortBy(sortQuery, elastic.NewScoreSort()).
+		SortBy(elastic.NewFieldSort(sortField).Asc(), elastic.NewScoreSort()).
 		From(skip).Size(take).
 		Do(ctx)
 	fmt.Printf("result: %v\n", result)
