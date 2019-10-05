@@ -35,7 +35,7 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 	result, err := s.Client.Search().
 		Index(indexName).
 		Query(esQuery).
-		SortBy(elastic.NewFieldSort(sortField).Asc(), elastic.NewScoreSort()).
+		SortBy(elastic.NewFieldSort(sortField).Asc()).
 		From(skip).Size(take).
 		Do(ctx)
 	fmt.Printf("result: %v\n", result)
