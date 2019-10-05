@@ -28,10 +28,11 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 	// TODO: check fields are not empty
 	fmt.Printf("ascending: %v\n", ascending)
 	fmt.Printf("sortField: %v\n", sortField)
+	result := new(elastic.SearchResult)
 	esQuery := elastic.NewMultiMatchQuery(text, fields...).
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
-	if ascending == true {
+	if ascending {
 		result, err := s.Client.Search().
 			Index(indexName).
 			Query(esQuery).
