@@ -10,7 +10,8 @@ import (
 )
 
 type SearchService struct {
-	Client *elastic.Client
+	Client    *elastic.Client
+	ascending bool
 }
 
 type SearchResponse struct {
@@ -23,29 +24,27 @@ func NewSearchService(Client *elastic.Client) *SearchService {
 	return &SearchService{Client: Client}
 }
 
-func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName string, skip int, take int, text interface{}, sortField string, ascending bool, fields ...string) (res SearchResponse, err error) {
-	// TODO: check fields are not empty
-	fmt.Printf("ascending: %v\n", ascending)
-	fmt.Printf("sortField: %v\n", sortField)
-	result := new(elastic.SearchResult)
+// TODO: indexName should move to SearchService
+func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName string, skip int, take int, text interface{}, sortField string, ascending bool, fields ...string) (SearchResponse, error) {
+	res := SearchResponse{}
+	s.SetAsc(ascending)
 	esQuery := elastic.NewMultiMatchQuery(text, fields...).
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
-	if ascending {
-		result, err = s.Client.Search().
-			Index(indexName).
-			Query(esQuery).
-			SortBy(elastic.NewFieldSort(sortField).Asc(), elastic.NewScoreSort()).
-			From(skip).Size(take).
-			Do(ctx)
+	sortQuery := elastic.FieldSort{}
+	fmt.Pritnf("sortQuery: %v\n", sortQuery)
+	if s.ascending {
+		sortQuery = elastic.NewFieldSort(sortField).Asc()
 	} else {
-		result, err = s.Client.Search().
-			Index(indexName).
-			Query(esQuery).
-			SortBy(elastic.NewFieldSort(sortField).Desc(), elastic.NewScoreSort()).
-			From(skip).Size(take).
-			Do(ctx)
+		sortQuery = elastic.NewFieldSort(sortField).Desc()
 	}
+	result, err := s.Client.Search().
+		Index(indexName).
+		Query(esQuery).
+		SortBy(sortQuery, elastic.NewScoreSort()).
+		From(skip).Size(take).
+		Do(ctx)
+	fmt.Printf("result: %v\n", result)
 
 	res.Time = fmt.Sprintf("%d", result.TookInMillis)
 	res.Hits = fmt.Sprintf("%d", result.Hits.TotalHits)
@@ -62,4 +61,22 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 	}
 	res.Results = docs
 	return res, nil
+}
+
+func (s *SearchService) SetAsc(ascending bool) *SearchService {
+	if ascending {
+		return s.Asc()
+	} else {
+		return s.Desc()
+	}
+}
+
+func (s *SearchService) Asc() (s *SearchService) {
+	s.ascending = true
+	return
+}
+
+func (s *SearchService) Desc() (s *SearchService) {
+	s.ascending = false
+	return
 }
