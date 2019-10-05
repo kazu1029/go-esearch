@@ -29,7 +29,7 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 	esQuery := elastic.NewMultiMatchQuery(text, fields...).
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
-	if asceding == true {
+	if ascending == true {
 		result, err := s.Client.Search().
 			Index(indexName).
 			Query(esQuery).
