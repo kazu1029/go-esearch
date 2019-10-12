@@ -8,3 +8,8 @@ require (
 	github.com/mailru/easyjson v0.7.0 // indirect
 	github.com/olivere/elastic v6.2.22+incompatible
 )
+
+replace (
+	github.com/kazu1029/go-elastic v0.1.2 => ./..
+	github.com/kazu1029/go-elastic/esearch v0.1.2 => ./../esearch
+)

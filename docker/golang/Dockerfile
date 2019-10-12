@@ -1,8 +1,9 @@
 FROM golang:1.12.0-alpine3.9
 
-WORKDIR /go/src/app
+WORKDIR /go/src/go-elastic/search-api
 
-COPY ./search-api .
+COPY . /go/src/go-elastic
+
 ENV GO111MODULE=on
 
 RUN apk add --no-cache \

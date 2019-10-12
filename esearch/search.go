@@ -36,9 +36,11 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 		Index(indexName).
 		Query(esQuery).
 		SortBy(elastic.NewFieldSort(sortField).Asc()).
+		// Sort(sortField, ascending).
+		// SortBy(elastic.NewFieldSort(sortField).Asc().Missing("_last").UnmappedType("points")).
+		// SortBy(elastic.NewScriptSort(elastic.NewScript("doc[created_at].value * 2"), "string")).
 		From(skip).Size(take).
 		Do(ctx)
-	fmt.Printf("result: %v\n", result)
 
 	if result == nil {
 		return res, nil

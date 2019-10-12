@@ -26,6 +26,7 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 	}
 	indexName := c.Param("index_name")
 	typeName := c.Param("type_name")
+	pipeline := c.Param("pipeline")
 	ctx := context.Background()
 	// TODO: need to dynamic variables
 	var docs []interface{}
@@ -34,7 +35,7 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 	}
 
 	index := NewElasticIndex(elasticClient)
-	res, err := index.BulkInsert(ctx, docs, indexName, typeName)
+	res, err := index.BulkInsert(ctx, docs, indexName, typeName, pipeline)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
@@ -85,7 +86,8 @@ func SearchEndpoint(c *gin.Context) {
 	}
 	// TODO: accept the other symbols
 	targetTypes = strings.Split(queries["target_types"][0], ",")
-	indexName := c.Param("index_name")
+	// indexName := c.Param("index_name")
+	indexName := queries["index_name"][0]
 	if query == "" {
 		errorResponse(c, http.StatusBadRequest, "Query not specified")
 	}
