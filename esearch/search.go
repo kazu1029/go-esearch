@@ -40,6 +40,10 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 		Do(ctx)
 	fmt.Printf("result: %v\n", result)
 
+	if result == nil {
+		return res, nil
+	}
+
 	res.Time = fmt.Sprintf("%d", result.TookInMillis)
 	res.Hits = fmt.Sprintf("%d", result.Hits.TotalHits)
 	if err != nil {
