@@ -79,14 +79,17 @@ func SearchEndpoint(c *gin.Context) {
 	ctx := context.Background()
 	queries := c.Request.URL.Query()
 	query = queries["query"][0]
-	sortField = queries["sort_field"][0]
+	if len(queries["sort_field"]) > 0 {
+		sortField = queries["sort_field"][0]
+	} else {
+		sortField = ""
+	}
 	ascending, err = strconv.ParseBool(c.Query("ascending"))
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
 	// TODO: accept the other symbols
 	targetTypes = strings.Split(queries["target_types"][0], ",")
-	// indexName := c.Param("index_name")
 	indexName := queries["index_name"][0]
 	if query == "" {
 		errorResponse(c, http.StatusBadRequest, "Query not specified")
@@ -102,7 +105,17 @@ func SearchEndpoint(c *gin.Context) {
 	}
 
 	search := NewElasticSearch(elasticClient)
-	res, err := search.SearchMultiMatchQuery(ctx, indexName, skip, take, query, sortField, ascending, targetTypes...)
+	search.Index = indexName
+	searchInput := &esearch.SearchServiceInput{
+		Ctx:          ctx,
+		Skip:         skip,
+		Take:         take,
+		SearchText:   query,
+		SortField:    sortField,
+		Ascending:    ascending,
+		TargetFields: targetTypes,
+	}
+	res, err := search.SearchMultiMatchQuery(searchInput)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}

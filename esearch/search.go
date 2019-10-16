@@ -12,6 +12,18 @@ import (
 type SearchService struct {
 	Client    *elastic.Client
 	ascending bool
+	Index     string
+}
+
+type SearchServiceInput struct {
+	Ctx          context.Context
+	Skip         int
+	Take         int
+	SearchText   interface{}
+	EsQuery      elastic.Query
+	SortField    string
+	Ascending    bool
+	TargetFields []string
 }
 
 type SearchResponse struct {
@@ -24,26 +36,18 @@ func NewSearchService(Client *elastic.Client) *SearchService {
 	return &SearchService{Client: Client}
 }
 
-// TODO: indexName should move to SearchService
-func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName string, skip int, take int, text interface{}, sortField string, ascending bool, fields ...string) (SearchResponse, error) {
+func (s *SearchService) SearchMultiMatchQuery(i *SearchServiceInput) (SearchResponse, error) {
+	var result *elastic.SearchResult
+	var err error
 	res := SearchResponse{}
-	s.SetAsc(ascending)
-	esQuery := elastic.NewMultiMatchQuery(text, fields...).
+	i.EsQuery = elastic.NewMultiMatchQuery(i.SearchText, i.TargetFields...).
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
 
-	result, err := s.Client.Search().
-		Index(indexName).
-		Query(esQuery).
-		SortBy(elastic.NewFieldSort(sortField).Asc()).
-		// Sort(sortField, ascending).
-		// SortBy(elastic.NewFieldSort(sortField).Asc().Missing("_last").UnmappedType("points")).
-		// SortBy(elastic.NewScriptSort(elastic.NewScript("doc[created_at].value * 2"), "string")).
-		From(skip).Size(take).
-		Do(ctx)
-
-	if result == nil {
-		return res, nil
+	if len(i.SortField) > 0 {
+		result, err = s.SearchWithSort(i)
+	} else {
+		result, err = s.SearchWithoutSort(i)
 	}
 
 	res.Time = fmt.Sprintf("%d", result.TookInMillis)
@@ -63,20 +67,21 @@ func (s *SearchService) SearchMultiMatchQuery(ctx context.Context, indexName str
 	return res, nil
 }
 
-func (s *SearchService) SetAsc(ascending bool) *SearchService {
-	if ascending {
-		return s.Asc()
-	} else {
-		return s.Desc()
-	}
+func (s *SearchService) SearchWithSort(i *SearchServiceInput) (res *elastic.SearchResult, err error) {
+	res, err = s.Client.Search().
+		Query(i.EsQuery).
+		SortBy(elastic.NewFieldSort(i.SortField).Asc()).
+		From(i.Skip).Size(i.Take).
+		Do(i.Ctx)
+
+	return res, err
 }
 
-func (s *SearchService) Asc() *SearchService {
-	s.ascending = true
-	return s
-}
+func (s *SearchService) SearchWithoutSort(i *SearchServiceInput) (res *elastic.SearchResult, err error) {
+	res, err = s.Client.Search().
+		Query(i.EsQuery).
+		From(i.Skip).Size(i.Take).
+		Do(i.Ctx)
 
-func (s *SearchService) Desc() *SearchService {
-	s.ascending = false
-	return s
+	return res, err
 }

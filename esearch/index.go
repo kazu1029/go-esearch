@@ -9,6 +9,8 @@ import (
 
 type IndexService struct {
 	Client *elastic.Client
+	// TODO: fix later
+	// Index string
 }
 
 func NewIndexService(Client *elastic.Client) *IndexService {
