@@ -10,9 +10,9 @@ import (
 )
 
 type SearchService struct {
-	Client    *elastic.Client
-	ascending bool
-	Index     string
+	Client       *elastic.Client
+	Index        string
+	searchSource *elastic.SearchSource
 }
 
 type SearchServiceInput struct {
@@ -34,7 +34,7 @@ type SearchResponse struct {
 }
 
 func NewSearchService(Client *elastic.Client) *SearchService {
-	return &SearchService{Client: Client}
+	return &SearchService{Client: Client, searchSource: elastic.NewSearchSource()}
 }
 
 func (s *SearchService) SearchMultiMatchQuery(i *SearchServiceInput) (SearchResponse, error) {
@@ -52,11 +52,11 @@ func (s *SearchService) SearchMultiMatchQuery(i *SearchServiceInput) (SearchResp
 		result, err = s.SearchWithoutSort(i)
 	}
 
-	res.Time = fmt.Sprintf("%d", result.TookInMillis)
-	res.Hits = fmt.Sprintf("%d", result.Hits.TotalHits)
 	if err != nil {
 		return res, err
 	}
+	res.Time = fmt.Sprintf("%d", result.TookInMillis)
+	res.Hits = fmt.Sprintf("%d", result.Hits.TotalHits)
 
 	hits, _ := strconv.Atoi(res.Hits)
 	var length int
@@ -77,9 +77,16 @@ func (s *SearchService) SearchMultiMatchQuery(i *SearchServiceInput) (SearchResp
 }
 
 func (s *SearchService) SearchWithSort(i *SearchServiceInput) (res *elastic.SearchResult, err error) {
+	var sortQuery *elastic.FieldSort
+	if i.Ascending {
+		sortQuery = elastic.NewFieldSort(i.SortField).Asc()
+	} else {
+		sortQuery = elastic.NewFieldSort(i.SortField).Desc()
+	}
+
 	res, err = s.Client.Search().
 		Query(i.EsQuery).
-		SortBy(elastic.NewFieldSort(i.SortField).Asc()).
+		SortBy(sortQuery).
 		From(i.Skip).Size(i.Take).
 		Do(i.Ctx)
 
