@@ -108,6 +108,7 @@ func SearchEndpoint(c *gin.Context) {
 	search.Index = indexName
 	searchInput := &esearch.SearchServiceInput{
 		Ctx:          ctx,
+		Typ:          "best_fields",
 		Skip:         skip,
 		Take:         take,
 		SearchText:   query,

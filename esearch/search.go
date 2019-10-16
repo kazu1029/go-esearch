@@ -17,7 +17,8 @@ type SearchService struct {
 
 type SearchServiceInput struct {
 	Ctx          context.Context
-	Skip         int
+	Typ          string
+	Skip         int // Skip starts from 0
 	Take         int
 	SearchText   interface{}
 	EsQuery      elastic.Query
@@ -41,6 +42,7 @@ func (s *SearchService) SearchMultiMatchQuery(i *SearchServiceInput) (SearchResp
 	var err error
 	res := SearchResponse{}
 	i.EsQuery = elastic.NewMultiMatchQuery(i.SearchText, i.TargetFields...).
+		Type(i.Typ).
 		Fuzziness("AUTO").
 		MinimumShouldMatch("1")
 
@@ -57,7 +59,14 @@ func (s *SearchService) SearchMultiMatchQuery(i *SearchServiceInput) (SearchResp
 	}
 
 	hits, _ := strconv.Atoi(res.Hits)
-	docs := make([]interface{}, hits)
+	var length int
+	if hits < 50 {
+		length = hits
+	} else {
+		length = i.Take
+	}
+	docs := make([]interface{}, length)
+
 	for i, hit := range result.Hits.Hits {
 		var doc interface{}
 		json.Unmarshal(*hit.Source, &doc)
