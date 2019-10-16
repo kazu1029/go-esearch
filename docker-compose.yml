@@ -11,7 +11,8 @@ services:
     depends_on:
       - elasticsearch
     volumes:
-      - ./search-api/:/go/src/app
+      - ./search-api:/go/src/go-elastic/search-api
+      - ./esearch:/go/src/go-elastic/esearch
     networks:
       - esnet
   elasticsearch:

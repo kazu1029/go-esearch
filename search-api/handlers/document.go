@@ -26,6 +26,7 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 	}
 	indexName := c.Param("index_name")
 	typeName := c.Param("type_name")
+	pipeline := c.Param("pipeline")
 	ctx := context.Background()
 	// TODO: need to dynamic variables
 	var docs []interface{}
@@ -34,7 +35,7 @@ func CreateDocumentsEndpoint(c *gin.Context) {
 	}
 
 	index := NewElasticIndex(elasticClient)
-	res, err := index.BulkInsert(ctx, docs, indexName, typeName)
+	res, err := index.BulkInsert(ctx, docs, indexName, typeName, pipeline)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
@@ -68,8 +69,9 @@ func CreateMapping(c *gin.Context) {
 }
 
 func SearchEndpoint(c *gin.Context) {
-	var query string
+	var query, sortField string
 	var targetTypes []string
+	var ascending bool
 	elasticClient, err := InitElastic()
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
@@ -77,9 +79,18 @@ func SearchEndpoint(c *gin.Context) {
 	ctx := context.Background()
 	queries := c.Request.URL.Query()
 	query = queries["query"][0]
+	if len(queries["sort_field"]) > 0 {
+		sortField = queries["sort_field"][0]
+	} else {
+		sortField = ""
+	}
+	ascending, err = strconv.ParseBool(c.Query("ascending"))
+	if err != nil {
+		errorResponse(c, http.StatusBadRequest, err.Error())
+	}
 	// TODO: accept the other symbols
 	targetTypes = strings.Split(queries["target_types"][0], ",")
-	indexName := c.Param("index_name")
+	indexName := queries["index_name"][0]
 	if query == "" {
 		errorResponse(c, http.StatusBadRequest, "Query not specified")
 	}
@@ -94,7 +105,18 @@ func SearchEndpoint(c *gin.Context) {
 	}
 
 	search := NewElasticSearch(elasticClient)
-	res, err := search.SearchMultiMatchQuery(ctx, indexName, skip, take, query, targetTypes...)
+	search.Index = indexName
+	searchInput := &esearch.SearchServiceInput{
+		Ctx:          ctx,
+		Typ:          "best_fields",
+		Skip:         skip,
+		Take:         take,
+		SearchText:   query,
+		SortField:    sortField,
+		Ascending:    ascending,
+		TargetFields: targetTypes,
+	}
+	res, err := search.SearchMultiMatchQuery(searchInput)
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}

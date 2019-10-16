@@ -9,6 +9,8 @@ import (
 
 type IndexService struct {
 	Client *elastic.Client
+	// TODO: fix later
+	// Index string
 }
 
 func NewIndexService(Client *elastic.Client) *IndexService {
@@ -46,11 +48,12 @@ func (s *IndexService) CreateIndexTemplate(ctx context.Context, templateName str
 	return "Template Created", nil
 }
 
-func (s *IndexService) BulkInsert(ctx context.Context, docs []interface{}, indexName string, typeName string) (string, error) {
+func (s *IndexService) BulkInsert(ctx context.Context, docs []interface{}, indexName, typeName, pipeline string) (string, error) {
 	bulk := s.Client.
 		Bulk().
 		Index(indexName).
-		Type(typeName)
+		Type(typeName).
+		Pipeline(pipeline)
 
 	for _, d := range docs {
 		bulk.Add(elastic.NewBulkIndexRequest().Doc(d))
@@ -58,5 +61,5 @@ func (s *IndexService) BulkInsert(ctx context.Context, docs []interface{}, index
 	if _, err := bulk.Do(ctx); err != nil {
 		return "", err
 	}
-	return "Document Bulk Created", nil
+	return "Bulk Updated", nil
 }
