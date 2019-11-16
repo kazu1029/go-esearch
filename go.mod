@@ -1,4 +1,4 @@
-module github.com/kazu1029/go-elastic
+module github.com/kazu1029/go-esearch
 
 go 1.12
 
