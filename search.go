@@ -69,7 +69,9 @@ func (s *SearchService) SearchMultiMatchQuery(i *SearchServiceInput) (SearchResp
 
 	for i, hit := range result.Hits.Hits {
 		var doc interface{}
-		json.Unmarshal(*hit.Source, &doc)
+		if err := json.Unmarshal(*hit.Source, &doc); err != nil {
+			return res, err
+		}
 		docs[i] = doc
 	}
 	res.Results = docs
