@@ -1,4 +1,4 @@
-# go-elastic
+# go-esearch
 
 ## How to use
 

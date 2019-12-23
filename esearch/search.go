@@ -11,12 +11,12 @@ import (
 
 type SearchService struct {
 	Client       *elastic.Client
-	Index        string
 	searchSource *elastic.SearchSource
 }
 
 type SearchServiceInput struct {
 	Ctx          context.Context
+	Index        string
 	Typ          string
 	Skip         int // Skip starts from 0
 	Take         int
@@ -25,6 +25,8 @@ type SearchServiceInput struct {
 	SortField    string
 	Ascending    bool
 	TargetFields []string
+	TargetTerms  map[string]string
+	TargetBools  map[string]bool
 }
 
 type SearchResponse struct {
@@ -40,11 +42,13 @@ func NewSearchService(Client *elastic.Client) *SearchService {
 func (s *SearchService) SearchMultiMatchQuery(i *SearchServiceInput) (SearchResponse, error) {
 	var result *elastic.SearchResult
 	var err error
-	res := SearchResponse{}
-	i.EsQuery = elastic.NewMultiMatchQuery(i.SearchText, i.TargetFields...).
+	var res SearchResponse
+
+	query := elastic.NewMultiMatchQuery(i.SearchText, i.TargetFields...).
 		Type(i.Typ).
-		Fuzziness("AUTO").
-		MinimumShouldMatch("1")
+		Operator("OR")
+
+	i.EsQuery = elastic.NewBoolQuery().Should(query)
 
 	if len(i.SortField) > 0 {
 		result, err = s.SearchWithSort(i)
@@ -60,18 +64,21 @@ func (s *SearchService) SearchMultiMatchQuery(i *SearchServiceInput) (SearchResp
 
 	hits, _ := strconv.Atoi(res.Hits)
 	var length int
-	if hits < 50 {
+	if hits < 100 {
 		length = hits
 	} else {
 		length = i.Take
 	}
 	docs := make([]interface{}, length)
 
-	for i, hit := range result.Hits.Hits {
-		var doc interface{}
-		json.Unmarshal(*hit.Source, &doc)
+	for i, doc := range docs {
+		err := json.Unmarshal(*result.Hits.Hits[i].Source, &doc)
+		if err != nil {
+			return res, err
+		}
 		docs[i] = doc
 	}
+
 	res.Results = docs
 	return res, nil
 }
@@ -85,6 +92,7 @@ func (s *SearchService) SearchWithSort(i *SearchServiceInput) (res *elastic.Sear
 	}
 
 	res, err = s.Client.Search().
+		Index(i.Index).
 		Query(i.EsQuery).
 		SortBy(sortQuery).
 		From(i.Skip).Size(i.Take).
@@ -95,6 +103,7 @@ func (s *SearchService) SearchWithSort(i *SearchServiceInput) (res *elastic.Sear
 
 func (s *SearchService) SearchWithoutSort(i *SearchServiceInput) (res *elastic.SearchResult, err error) {
 	res, err = s.Client.Search().
+		Index(i.Index).
 		Query(i.EsQuery).
 		From(i.Skip).Size(i.Take).
 		Do(i.Ctx)

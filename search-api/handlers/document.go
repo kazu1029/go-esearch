@@ -71,7 +71,10 @@ func CreateMapping(c *gin.Context) {
 func SearchEndpoint(c *gin.Context) {
 	var query, sortField string
 	var targetTypes []string
+	var targetTerms map[string]string
+	var targetBools map[string]bool
 	var ascending bool
+
 	elasticClient, err := InitElastic()
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
@@ -84,19 +87,25 @@ func SearchEndpoint(c *gin.Context) {
 	} else {
 		sortField = ""
 	}
+
 	ascending, err = strconv.ParseBool(c.Query("ascending"))
 	if err != nil {
 		errorResponse(c, http.StatusBadRequest, err.Error())
 	}
-	// TODO: accept the other symbols
+
 	targetTypes = strings.Split(queries["target_types"][0], ",")
 	indexName := queries["index_name"][0]
 	if query == "" {
 		errorResponse(c, http.StatusBadRequest, "Query not specified")
 	}
 
+	prefecture := queries["prefecture"][0]
+	laser, err := strconv.ParseBool(c.Query("laser"))
+	targetTerms = map[string]string{"prefecture": prefecture}
+	targetBools = map[string]bool{"laser": laser}
+
 	skip := 0
-	take := 50
+	take := 100
 	if i, err := strconv.Atoi(c.Query("skip")); err == nil {
 		skip = i
 	}
@@ -105,9 +114,9 @@ func SearchEndpoint(c *gin.Context) {
 	}
 
 	search := NewElasticSearch(elasticClient)
-	search.Index = indexName
 	searchInput := &esearch.SearchServiceInput{
 		Ctx:          ctx,
+		Index:        indexName,
 		Typ:          "best_fields",
 		Skip:         skip,
 		Take:         take,
@@ -115,6 +124,8 @@ func SearchEndpoint(c *gin.Context) {
 		SortField:    sortField,
 		Ascending:    ascending,
 		TargetFields: targetTypes,
+		TargetTerms:  targetTerms,
+		TargetBools:  targetBools,
 	}
 	res, err := search.SearchMultiMatchQuery(searchInput)
 	if err != nil {
